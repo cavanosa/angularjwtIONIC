@@ -1,20 +1,44 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
-import { Platform } from '@ionic/angular';
+import { Platform, MenuController } from '@ionic/angular';
 import { SplashScreen } from '@ionic-native/splash-screen/ngx';
 import { StatusBar } from '@ionic-native/status-bar/ngx';
+import { Router, RouterEvent, NavigationEnd } from '@angular/router';
+import { TokenService } from './services/token.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+
+  isLogged = false;
+  isAdmin = false;
+
   constructor(
     private platform: Platform,
     private splashScreen: SplashScreen,
-    private statusBar: StatusBar
+    private statusBar: StatusBar,
+    private router: Router,
+    private tokenService: TokenService,
+    private menuController: MenuController
   ) {
     this.initializeApp();
+  }
+
+  ngOnInit() {
+    if (this.tokenService.getToken()) {
+      this.isLogged = true;
+      this.menuController.enable(true);
+      if (this.tokenService.getAuthorities().indexOf('ROLE_ADMIN') !== -1) {
+       this.isAdmin = true;
+      } else {
+        this.isAdmin = false;
+      }
+    } else {
+      this.isLogged = false;
+      this.menuController.enable(false);
+    }
   }
 
   initializeApp() {
@@ -22,5 +46,16 @@ export class AppComponent {
       this.statusBar.styleDefault();
       this.splashScreen.hide();
     });
+  }
+
+  closeMenu() {
+    this.menuController.close();
+  }
+
+  logOut() {
+    this.tokenService.logOut();
+    this.menuController.close();
+    this.router.navigate(['']);
+    window.location.reload();
   }
 }
